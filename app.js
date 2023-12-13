@@ -1,41 +1,103 @@
 const express = require('express');
-const connectToDatabase = require('./database');
-const { uploadCsvData, findUserById } = require('./csvHandler');
-const bodyParser = require('body-parser');
+const fs = require('fs');
+const csv = require('csv-parser');
+const mongoose = require('mongoose');
+const bodyParser=require('body-parser')
+const path = require('path');
 const app = express();
 const port = 3000;
+const mongoURI = 'mongodb+srv://rupeshp2123:uchiha%40madara@cluster0.abmxpa0.mongodb.net/?retryWrites=true&w=majority';
+app.use(express.static('./public'));
+app.use(bodyParser.urlencoded({ extended: true }));
+async function connect() {
+  try {
+    await mongoose.connect(mongoURI);
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error(err);
+  }
+}
+connect();
 
-app.use(bodyParser.urlencoded({ extended: true })); 
-connectToDatabase();
-app.get('/',(req,res)=>{
-  res.sendFile('C:/Users/Dragon Sin/Desktop/zywa/index.html')
+async function uploadCsvData(schema, csvFilePath, collectionName) {
+  const Model = mongoose.model(collectionName, schema);
+  const results = [];
+
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => results.push(data))
+    .on('end', async () => {
+      try {
+        await Model.insertMany(results);
+        console.log(`CSV data uploaded to MongoDB for collection: ${collectionName}`);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+}
+const DeliveredSchema = new mongoose.Schema({
+  'ID ': String,
+  'Card ID': String,
+  'User contact': String,
+  'Timestamp': String,
+  'Comment': String
+});
+const PickupSchema = new mongoose.Schema({
+  'ID': String,
+  'Card ID': String,
+  'User Mobile': String,
+  'Timestamp': String,
+});
+const ReturnedSchema = new mongoose.Schema({
+  'ID ': String,
+  'Card ID': String,
+  'User contact': String,
+  'Timestamp': String,
 })
-app.post('/', (req, res) => {
-  
-  res.send(`Full name is:${req.body.fname} ${req.body.lname}.`);
-});
-app.get('/test',(req,res)=>{
-  res.sendFile(__dirname+'/Delivered.csv')
+
+app.get('/upload',(req,res)=>{
+  uploadCsvData(DeliveredSchema, __dirname+'/public/Delivered.csv', 'Delivered_model');
+  uploadCsvData(DeliveredSchema,__dirname+'/public/Delivery_exceptions.csv','Delivery_exceptions')
+  uploadCsvData(PickupSchema,__dirname+'/public/Pickup.csv','Picked_model')
+  uploadCsvData(ReturnedSchema,__dirname+'/public/Returned.csv','Returned_model');
 })
-app.get('/upload-csv', (req, res) => {
-  const deliveredPath = __dirname+'/Delivered.csv';
-  const delivery_expectations = __dirname+'/Delivery_exceptions.csv';
-  const pickupPath = __dirname+'/Pickup.csv';
-  const returnedPath = __dirname+'/Returned.csv';
-  uploadCsvData(deliveredPath);
-  uploadCsvData(deliveredPath);
-  uploadCsvData();
-  uploadCsvData(csvFilePath);
-  res.send('Uploading CSV data...');
+app.get('/find',(req,res)=>{
+  res.sendFile(__dirname+'/public/index.html')
 });
 
-app.get('/find', (req, res) => {
-  const userId = 'A883';
-  findUserById(userId);
-  res.sendFile('C:/Users/Dragon Sin/Desktop/zywa/index.html')
+const findUserByName = async (userId,usermodel,modelschema,by,add) => {
+  try {
+    const uModel=mongoose.model(usermodel,modelschema);
+    let key;
+    if(add)
+    {
+      key=`"${userId}"`
+    }else{
+      key=userId;
+    }
+    const user = await uModel.findOne({[by]:key});
+    return user
+  } catch (error) {
+    return new Error("unable to find")
+  } 
+};
+const arr = [
+  { model: 'Delivered_model', schema: DeliveredSchema, field: 'User contact', by: true },
+  { model: 'Delivery_exceptions', schema: DeliveredSchema, field: 'User contact', by: true },
+  { model: 'Picked_model', schema: PickupSchema, field: 'User Mobile', by: false },
+  { model: 'Returned_model', schema: ReturnedSchema, field: 'User contact', by: false },
+];
+app.post('/find', async (req, res) => {
+  const mobile = req.body.mobile;
+  for (const c of arr) {
+    const result = await findUserByName(mobile, c.model, c.schema, c.field, c.by);
+    if (result) {
+      res.send(result);
+      return;
+    }
+  }
+  res.send(`No Data`);
 });
-
-// Start the server
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
