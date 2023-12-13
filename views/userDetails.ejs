@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Details</title>
+  <link rel="stylesheet" href="./error.css">
+</head>
+<body>
+  <h1><%=status %><% if (user['Comment']) { %> <%= user['Comment'] %><% } %></h1>
+
+  <ul>
+    <li><strong>ID:</strong> <%= user['ID'] %></li>
+    <li><strong>Card ID:</strong> <%= user['Card ID'] %></li>
+    <li><strong>User Contact:</strong> <%= user['User contact'] %></li>
+    <li><strong>Timestamp:</strong> <%= user['Timestamp'] %></li>
+  </ul>
+</body>
+</html>
