@@ -21,6 +21,7 @@ Node.js is a powerful and versatile JavaScript runtime built on the V8 JavaScrip
 1) JavaScript Everywhere: Node.js allows you to use JavaScript for both server-side and client-side development, providing a consistent language across your entire stack.
 
 2) NPM Ecosystem: Node Package Manager (NPM) is a vast ecosystem of open-source libraries and tools that can be easily integrated into your project, saving development time and effort.
+
 3) Fast Execution: Node.js is known for its fast execution speed, thanks to the V8 JavaScript engine. This makes it suitable for real-time applications and high-performance tasks.
 
 ## Deployment
